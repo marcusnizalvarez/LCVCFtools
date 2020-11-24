@@ -27,14 +27,16 @@ sudo apt install qt5-qmake libboost-all-dev
  
  ## Other arguments
 * --remove <STRING>        Remove samples from a list file (One sample name per line).
-* --sample-stats           Output sample statistics to 'stats.tsv'.
-* --other-stats            Output other statistics to 'stats.tsv'. (AD-based freq, GCR,...)
+* --keep <STRING>          Keep samples from a list file (One sample name per line).
+* --sample-stats           Output sample statistics to 'stats1.tsv'.
+* --other-stats            Output other statistics to 'stats2.tsv'. (AD-based freq, GCR,...)
 * --ID                     Generate generic ID, useful for programs like Plink.
+* --verbose                Verbose mode.
 * --help                   Print this message.
   
 ## Usage example  
 ```
-gzip -cd input.vcf.gz | LCVCFtools --vcf - --minGQ 20 --minDP 5 --minGCR 0.25 --minDPR 5 0.5 --MAF 0.1 --sample-stats | gzip -c > output.vcf.gz
+gzip -cd input.vcf.gz | LCVCFtools --vcf - --minGQ 20 --minDP 5 --minGCR 0.25 --minDPR 5 0.5 --MAF 0.1 --sample-stats | bgzip -c > output.vcf.gz
 ```
 
 # Citation
