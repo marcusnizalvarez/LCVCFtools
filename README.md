@@ -13,6 +13,7 @@ If you don't have qmake and libboost installed, you can run the following comman
 sudo apt install qt5-qmake libboost-all-dev   
 ```
 # Usage
+```
 ## Input mode 
 * --vcf <STRING>           Read from VCF file. Use - to read from stdin.
 * --gzvcf <STRING>         Read from Gzip compressed VCF file. Use - to read from stdin.
@@ -33,6 +34,7 @@ sudo apt install qt5-qmake libboost-all-dev
 * --ID                     Generate generic ID, useful for programs like Plink.
 * --verbose                Verbose mode.
 * --help                   Print this message.
+```
   
 ## Usage example  
 ```
