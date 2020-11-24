@@ -19,7 +19,7 @@ https://www.boost.org/LICENSE_1_0.txt)
 ************************************************************/
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
-#define THIS_VERSION "1.0.0"
+#define THIS_VERSION "1.0.1"
 struct STATSstruct{
     std::vector<unsigned> DP, GQ;
     double GCR, NMR;
@@ -46,6 +46,7 @@ private:
     void ReadData();
     void ReadHeader();
     void ReadRemoveList();
+    void ReadKeepList();
     void SetInputMode();
     void SetParameters(std::vector<std::string>& args);
     void ShowHelp();
@@ -73,6 +74,7 @@ private:
     boost::iostreams::filtering_istream in;
     std::string InputFilename;
     std::string RemoveFilename;
+    std::string KeepFilename;
     bool IsGzipped;
     bool IsFile;
     /*************
@@ -87,11 +89,14 @@ private:
     /*************
         OTHER PARAMETERS
     *************/
-    bool IsOtherStats;
+    bool IsVerbose;
     bool IsID;
+    bool IsOtherStats;
     bool IsSampleStats;
     std::set<std::string> RemoveSamples;
     std::set<size_t> RemoveIndex;
+    std::set<std::string> KeepSamples;
+    std::set<size_t> KeepIndex;
     /*************
         VCF HEADER
     *************/
@@ -107,7 +112,7 @@ private:
     /*************
         STATUS
     *************/
-    size_t LogFreq;
+    size_t VerboseFreq;
     size_t tmpCounter;
     size_t OutputtedLines;
     size_t ReadedLines;
@@ -117,11 +122,12 @@ private:
     /*************
         OTHER STATS
     *************/
+    std::ofstream OtherStatsFile;
     double GCR;
     /*************
         SAMPLE STATS
     *************/
-    std::ofstream StatisticsFile;
+    std::ofstream SampleStatsFile;
     std::vector<STATSstruct> StatsVector;
     int SampleStatsYLim;
 };

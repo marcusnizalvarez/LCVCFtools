@@ -18,9 +18,11 @@ void LCVCFtools::ShowHelp(){
                  "\n"
                  "[Other arguments] \n"
                  "--remove <STRING>       Remove samples from a list file (One sample name per line).\n"
-                 "--sample-stats          Output sample statistics to 'stats.tsv'.\n"
-                 "--other-stats           Output other statistics to 'stats.tsv'. (AD-based freq, GCR,...)\n"
+                 "--keep <STRING>         Keep samples from a list file (One sample name per line).\n"
+                 "--sample-stats          Output sample statistics to 'stats1.tsv'.\n"
+                 "--other-stats           Output other statistics to 'stats2.tsv'. (AD-based freq, GCR,...)\n"
                  "--ID                    Generate generic ID, useful for programs like Plink.\n"
+                 "--verbose               Verbose mode.\n"
                  "--help                  Print this message.\n"
               << std::endl;
 }
@@ -29,7 +31,7 @@ LCVCFtools::LCVCFtools(int argc, char* argv[]){
     /*************
         Initialize Variables
     *************/
-    LogFreq = 10*1000;
+    VerboseFreq = 10000;
     SampleStatsYLim = 30;
     tmpCounter = 0;
     ReadedLines = 0;
@@ -46,6 +48,7 @@ LCVCFtools::LCVCFtools(int argc, char* argv[]){
     /*************
         Initialize other parameters
     *************/
+    IsVerbose = false;
     IsFile = true;
     IsGzipped = false;
     IsID = false;
@@ -61,9 +64,13 @@ LCVCFtools::LCVCFtools(int argc, char* argv[]){
     /*************
         Open statistics file
     *************/
-    if(IsSampleStats || IsOtherStats){
-        StatisticsFile.open("stats.tsv");
-        StatisticsFile << std::scientific << std::setprecision(2);
+    if(IsSampleStats){
+        SampleStatsFile.open("stats1.tsv");
+        SampleStatsFile << std::scientific << std::setprecision(2);
+    }
+    if(IsOtherStats){
+        OtherStatsFile.open("stats2.tsv");
+        OtherStatsFile << std::scientific << std::setprecision(2);
     }
 }
 void LCVCFtools::ReadRemoveList(){
@@ -74,6 +81,16 @@ void LCVCFtools::ReadRemoveList(){
         std::string tmpString;
         if(!std::getline(File, tmpString)) break;
         if(!tmpString.empty()) RemoveSamples.insert(tmpString);
+    }
+}
+void LCVCFtools::ReadKeepList(){
+    if(KeepFilename.empty()) return;
+    std::ifstream File(KeepFilename);
+    if(!File.is_open()) Terminate("Keep list file does not exist or is not readable.", false);
+    while(true){
+        std::string tmpString;
+        if(!std::getline(File, tmpString)) break;
+        if(!tmpString.empty()) KeepSamples.insert(tmpString);
     }
 }
 void LCVCFtools::CheckParameters(){
@@ -183,14 +200,21 @@ void LCVCFtools::SetParameters(std::vector<std::string>& args){
         }
         if(args[i]=="--remove"){
             CheckARG("remove");
+            if(!KeepFilename.empty()) Terminate("Argument remove cannot be used with keep");
             if(++i >= args.size()) Terminate("Missing argument value for remove", true);
             RemoveFilename = args[i];
             continue;
         }
-        if(args[i]=="--log-freq"){ // secret option
-            CheckARG("log-freq");
-            if(++i >= args.size()) Terminate("Missing argument value for log-freq", true);
-            LogFreq = std::stoul(args[i])*1000;
+        if(args[i]=="--keep"){
+            CheckARG("keep");
+            if(!RemoveFilename.empty()) Terminate("Argument keep cannot be used with remove");
+            if(++i >= args.size()) Terminate("Missing argument value for keep", true);
+            KeepFilename = args[i];
+            continue;
+        }
+        if(args[i]=="--verbose"){
+            CheckARG("verbose");
+            IsVerbose=true;
             continue;
         }
         if(args[i]=="--help") Terminate("",true,0);
@@ -198,13 +222,6 @@ void LCVCFtools::SetParameters(std::vector<std::string>& args){
     }
     if(DefinedArguments.find("input")==DefinedArguments.end())
         Terminate("Missing input mode argument", true);
-    //std::set<std::string> RequiredArguments = {"minGQ","minDP","minGCR","minDPR","MAF","input"};
-    // for(const auto& Arg : DefinedArguments) RequiredArguments.erase(Arg);
-    // if(!RequiredArguments.empty()){
-    //     std::string tmpMsg = "Missing argument(s): ";
-    //     for(std::string s : RequiredArguments) tmpMsg += s + "; ";
-    //     Terminate(tmpMsg, true);
-    // }
 }
 void LCVCFtools::SetInputMode(){
     //          Copyright Joe Coder 2004 - 2006.
@@ -255,9 +272,9 @@ void LCVCFtools::OutputSampleStatistics(){
     Log("Calculating sample statistics...");
     for(size_t i(0); i < HeaderSamples.size(); i++) StatsVector[i].Name = HeaderSamples[i];
     std::sort(StatsVector.begin(),StatsVector.end(),[](const STATSstruct& a, const STATSstruct& b)->bool{return a.NMR > b.NMR;});
-    StatisticsFile << "## Sample Statistics Table" << std::endl;
-    StatisticsFile << "## NMR=Mean non-missing rate; GCR=Mean genotype call rate; DP=Depth at a given level; GQ=Genotype at a given level" << std::endl;
-    StatisticsFile << "Sample\tVariable\tLevel\tValue" << std::endl;
+    SampleStatsFile << "## Sample Statistics Table" << std::endl;
+    SampleStatsFile << "## NMR=Mean non-missing rate; GCR=Mean genotype call rate; DP=Depth at a given level; GQ=Genotype at a given level" << std::endl;
+    SampleStatsFile << "Sample\tVariable\tLevel\tValue" << std::endl;
     for(STATSstruct& x : StatsVector){
         int tmpDPsum(x.DP[0]), tmpGQsum(x.GQ[0]);
         for(int i(1); i < SampleStatsYLim+1; i++){
@@ -268,28 +285,27 @@ void LCVCFtools::OutputSampleStatistics(){
                 x.GQ[i] += x.GQ[j];
             }
         }
-        StatisticsFile << x.Name << "\t" << "NMR" << "\t.\t" << x.NMR/OutputtedLines  << std::endl;
-        StatisticsFile << x.Name << "\t" << "GCR" << "\t.\t" << x.GCR/OutputtedLines  << std::endl;
+        SampleStatsFile << x.Name << "\t" << "NMR" << "\t.\t" << x.NMR/OutputtedLines  << std::endl;
+        SampleStatsFile << x.Name << "\t" << "GCR" << "\t.\t" << x.GCR/OutputtedLines  << std::endl;
         for(int i(1); i < SampleStatsYLim+1; i++)
-            StatisticsFile << x.Name << "\t" << "DP" << "\t" << i << "\t" << static_cast<double>(x.DP[i])/tmpDPsum  << std::endl;
+            SampleStatsFile << x.Name << "\t" << "DP" << "\t" << i << "\t" << static_cast<double>(x.DP[i])/tmpDPsum  << std::endl;
         for(int i(1); i < SampleStatsYLim+1; i++)
-            StatisticsFile << x.Name << "\t" << "GQ" << "\t" << i << "\t" << static_cast<double>(x.GQ[i])/tmpGQsum  << std::endl;
+            SampleStatsFile << x.Name << "\t" << "GQ" << "\t" << i << "\t" << static_cast<double>(x.GQ[i])/tmpGQsum  << std::endl;
     }
-    StatisticsFile.close();
 }
 void LCVCFtools::OutputOtherStatistics(){
     if(!OutputtedLines) {
-        StatisticsFile << "## Other Statistics Table" << std::endl;
-        StatisticsFile << "## ID=Identity; AFO=Allele Order (Decreasing); AF=Allele Frequency; GCR=Genotype Call Rate" << std::endl;
-        StatisticsFile << "ID\tAO\tAF\tGCR" << std::endl;
+        OtherStatsFile << "## Other Statistics Table" << std::endl;
+        OtherStatsFile << "## ID=Identity; AFO=Allele Order (Decreasing); AF=Allele Frequency; GCR=Genotype Call Rate" << std::endl;
+        OtherStatsFile << "ID\tAO\tAF\tGCR" << std::endl;
     }
-    StatisticsFile << CHR + ":" + POS + ':' + REF + ':' + ALT;
-    StatisticsFile << '\t' << Alleles[0].first;
-    for(size_t i(1); i < Alleles.size(); i++) StatisticsFile << ';' << Alleles[i].first;
-    StatisticsFile << '\t' << Alleles[0].second;
-    for(size_t i(1); i < Alleles.size(); i++) StatisticsFile << ';' << Alleles[i].second;
-    StatisticsFile << '\t' << GCR;
-    StatisticsFile << std::endl;
+    OtherStatsFile << CHR + ":" + POS + ':' + REF + ':' + ALT;
+    OtherStatsFile << '\t' << Alleles[0].first;
+    for(size_t i(1); i < Alleles.size(); i++) OtherStatsFile << ';' << Alleles[i].first;
+    OtherStatsFile << '\t' << Alleles[0].second;
+    for(size_t i(1); i < Alleles.size(); i++) OtherStatsFile << ';' << Alleles[i].second;
+    OtherStatsFile << '\t' << GCR;
+    OtherStatsFile << std::endl;
 }
 bool LCVCFtools::GetLine(std::string& TmpString){
     if(IsFile){
@@ -327,14 +343,25 @@ void LCVCFtools::ReadHeader(){
                         HeaderColumns.push_back(tmpString2);
                     }
                 }
-                /******* Apply remove OPT *******/
+                /******* Apply remove/keep OPT *******/
                 ReadRemoveList();
+                ReadKeepList();
                 size_t i(0);
                 while(true){
                     std::string tmpName;
                     if(!std::getline(temp_ssin, tmpName, '\t')) break;
-                    if(RemoveSamples.find(tmpName)!=RemoveSamples.end()) RemoveIndex.insert(i);
-                    else{
+                    bool Rm=false;
+                    if(!RemoveSamples.empty())
+                        if(RemoveSamples.find(tmpName)!=RemoveSamples.end()){
+                            RemoveIndex.insert(i);
+                            Rm=true;
+                        }
+                    if(!KeepSamples.empty())
+                        if(KeepSamples.find(tmpName)==KeepSamples.end()) {
+                            RemoveIndex.insert(i);
+                            Rm=true;
+                        }
+                    if(!Rm){
                         HeaderSamples.push_back(tmpName);
                         STATSstruct tmpSTATS;
                         tmpSTATS.DP.resize(SampleStatsYLim+1,0);
@@ -366,7 +393,7 @@ void LCVCFtools::ReadData(){
             OutputtedLines++;
             OutputLine();
         }
-        if((++tmpCounter >= LogFreq)){
+        if(IsVerbose && (++tmpCounter >= VerboseFreq)){
             tmpCounter = 0;
             ShowStatus();
         }
@@ -441,9 +468,10 @@ void LCVCFtools::OutputHeader(){
               << "Date="
               << StartingTimeStr
               << '\n';
-    for(const auto& tmpString : HeaderColumns) std::cout << tmpString << '\t';
-    for(const auto& tmpString : HeaderSamples) std::cout << tmpString << '\t';
-    std::cout << '\n';
+    std::string tmpHeaderString;
+    for(const auto& tmpString : HeaderColumns) tmpHeaderString += tmpString + '\t';
+    for(const auto& tmpString : HeaderSamples) tmpHeaderString += tmpString + '\t';
+    std::cout << tmpHeaderString.erase(tmpHeaderString.size()-1) << '\n';
 }
 void LCVCFtools::OutputLine(){
     std::string tmpString =
