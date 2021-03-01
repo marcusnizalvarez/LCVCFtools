@@ -43,7 +43,7 @@ gzip -cd input.vcf.gz | LCVCFtools --vcf - --minGQ 20 --minDP 5 --minGCR 0.25 --
 
 # Citation
 For now, you can cite LCVCFtools as:  
-Alvarez, M. V. N. (2020, November 4). LCVCFtools v1.0.0-alpha (Version v1.0.0-alpha). Zenodo. http://doi.org/10.5281/zenodo.4243800
+Alvarez, M. V. N. (2020, November 4). LCVCFtools: Low-coverage variant call format tools. Zenodo. http://doi.org/10.5281/zenodo.4243800
 
 # Credits
 Author: Marcus Vinicius Niz Alvarez  
