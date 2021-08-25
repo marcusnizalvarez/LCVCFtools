@@ -2,15 +2,12 @@
 LCVCFtools is a simple C++ program designed for working with VCF v4.2 files generated from low-coverage whole genome sequencing. This tools is useful for data optimization before genotype imputation steps by removing samples or variantes with excessive missing data.
 
 # Compiling
-LCVCFtools requires a C++ compiler, such as GCC and  [Boost](https://www.boost.org/) library. You can easily compile this program using LCVCFtools.pro file and qmake tool, just run the following command:
+You can easily compile this program using LCVCFtools.pro file and qmake tool, just run the following command:
 ```
+sudo apt install qt5-qmake libboost-all-dev libz-dev  
 git clone https://github.com/marcusnizalvarez/LCVCFtools.git  
 cd LCVCFtools/  
 qmake && make
-```
-If you don't have qmake and libboost installed, you can run the following command:  
-```
-sudo apt install qt5-qmake libboost-all-dev libz-dev  
 ```
 # Usage
 ## Input mode 
@@ -35,7 +32,7 @@ sudo apt install qt5-qmake libboost-all-dev libz-dev
   
 ## Usage example  
 ```
-LCVCFtools --gzvcf example.vcf.gz - --minGQ 20 --minDP 5 --minGCR 0.25 --minDPR 5 0.5 --MAF 0.1 --sample-stats | gzip -c > output.vcf.gz
+./LCVCFtools --gzvcf example.vcf.gz - --minGQ 20 --minDP 5 --minGCR 0.25 --minDPR 5 0.5 --MAF 0.1 --sample-stats | gzip -c > output.vcf.gz
 ```
 # Credits
 Author: Marcus Vinicius Niz Alvarez  
