@@ -10,41 +10,33 @@ qmake && make
 ```
 If you don't have qmake and libboost installed, you can run the following command:  
 ```
-sudo apt install qt5-qmake libboost-all-dev   
+sudo apt install qt5-qmake libboost-all-dev libz-dev  
 ```
 # Usage
-```
 ## Input mode 
 * --vcf <STRING>           Read from VCF file. Use - to read from stdin.
 * --gzvcf <STRING>         Read from Gzip compressed VCF file. Use - to read from stdin.
  
 ## Filter parameters
-* --minGQ <INT>            Minimum genotype quality in PhredScale. [Default=10]
-* --minDP <INT>            Minimum depth. [Default=1]
-* --MAF <FLOAT>            Minor allele frequency, based on allele depth (AD). [Default=0.01]
+* --minGQ <INT>            Minimum genotype quality in PhredScale. [Default=20]
+* --minDP <INT>            Minimum depth. [Default=5]
+* --MAF <FLOAT>            Minor allele frequency, based on allele depth (AD). [Default=0.1]
 * --minGCR <FLOAT>         Minimum genotype call rate [Default=0].
 * --minDPR <INT> <FLOAT>   Minimum DP rate. Can be defined multiple times.
 * --minGQR <INT> <FLOAT>   Minimum GQ rate. Can be defined multiple times.
  
  ## Other arguments
 * --remove <STRING>        Remove samples from a list file (One sample name per line).
-* --keep <STRING>          Keep samples from a list file (One sample name per line).
-* --sample-stats           Output sample statistics to 'stats1.tsv'.
-* --other-stats            Output other statistics to 'stats2.tsv'. (AD-based freq, GCR,...)
+* --sample-stats           Output sample statistics to 'stats.tsv'.
+* --keep-multiallelic      Don't skip multiallelic variants.
 * --ID                     Generate generic ID, useful for programs like Plink.
 * --verbose                Verbose mode.
 * --help                   Print this message.
-```
   
 ## Usage example  
 ```
-gzip -cd input.vcf.gz | LCVCFtools --vcf - --minGQ 20 --minDP 5 --minGCR 0.25 --minDPR 5 0.5 --MAF 0.1 --sample-stats | bgzip -c > output.vcf.gz
+LCVCFtools --gzvcf example.vcf.gz - --minGQ 20 --minDP 5 --minGCR 0.25 --minDPR 5 0.5 --MAF 0.1 --sample-stats | gzip -c > output.vcf.gz
 ```
-
-# Citation
-For now, you can cite LCVCFtools as:  
-Alvarez, M. V. N. (2020, November 4). LCVCFtools: Low-coverage variant call format tools. Zenodo. http://doi.org/10.5281/zenodo.4243800
-
 # Credits
 Author: Marcus Vinicius Niz Alvarez  
 Email: marcus.alvarez@unesp.br  
