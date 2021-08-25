@@ -19,53 +19,58 @@ https://www.boost.org/LICENSE_1_0.txt)
 ************************************************************/
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
-#define THIS_VERSION "1.0.1"
-struct STATSstruct{
-    std::vector<unsigned> DP, GQ;
-    double GCR, NMR;
-    std::string Name;
-};
-struct SAMPLEstruct{
-    std::vector<std::string> FORMAT;
-    std::string *GT, *PL, *DP, *AD, *GQ;
-};
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
+#define THIS_VERSION "1.0.2"
 class LCVCFtools
 {
 public:
     LCVCFtools(int argc, char* argv[]);
+    LCVCFtools();
     void Run();
 private:
+    struct SampleStatsStruct{
+        std::vector<unsigned> DP, GQ;
+        double GCR, NMR;
+        std::string Name;
+    };
+    struct SampleDataStruct{
+        std::vector<std::string> FORMAT;
+        std::string *GT, *PL, *DP, *AD, *GQ;
+    };
+    struct SnpDataStruct{
+        std::string CHR, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMATstr;
+        std::vector<SampleDataStruct> SampleDataVector;
+        std::vector<std::pair<int,double>> AlleleCountVector;
+        double GCR=0;
+    };
     /*************
         FUNCTIONS
     *************/
-    void CheckParameters();
     void CheckARG(std::string Argument, bool IsUnique = true);
     void Log(std::string Msg);
     void OutputHeader();
     void OutputLine();
     void ReadData();
     void ReadHeader();
-    void ReadRemoveList();
-    void ReadKeepList();
-    void SetInputMode();
+    void ReadRemoveList(std::string Filename);
+    void OpenInputStream();
     void SetParameters(std::vector<std::string>& args);
     void ShowHelp();
     void ShowStatus();
     void OutputSampleStatistics();
-    void OutputOtherStatistics();
-    void Terminate(std::string Msg = "", bool Help = false, int ReturnValue = -1);
+    void Terminate(std::string Msg);
     bool CheckRate(const std::vector<int> &vec, int val, double qnt);
     bool Filter();
     bool GetLine(std::string& TmpString);
     bool StringToVcf(const std::string& tmpLineString);
     int StrToData(const std::string& String);
+    std::string GetParametersString();
     std::string NowString();
-    std::vector<std::string> SplitString(const std::string&, char Delim);
     /*************
         VARIABLES
     *************/
     std::set<std::string> DefinedArguments;
-    std::string Parameters;
     std::string StartingTimeStr;
     /*************
         INPUT
@@ -73,62 +78,54 @@ private:
     std::ifstream file;
     boost::iostreams::filtering_istream in;
     std::string InputFilename;
-    std::string RemoveFilename;
-    std::string KeepFilename;
-    bool IsGzipped;
-    bool IsFile;
+    bool IsGzipped = false;
+    bool IsFile = true;
     /*************
         FILTER PARAMETERS
     *************/
-    int    minDP;
-    int    minGQ;
-    double minGCR;
+    int    minDP = 5;
+    int    minGQ = 20;
+    double minGCR = 0;
+    double MAF = 0.1;
     std::vector<int>    DPRlevel, GQRlevel;
     std::vector<double> DPRvalue, GQRvalue;
-    double MAF;
     /*************
         OTHER PARAMETERS
     *************/
-    bool IsVerbose;
-    bool IsID;
-    bool IsOtherStats;
-    bool IsSampleStats;
+    bool IsVerbose = false;
+    bool IsID = false;
+    bool IsSampleStats = false;
+    bool IsRemoveMultiallelic = true;
     std::set<std::string> RemoveSamples;
     std::set<size_t> RemoveIndex;
-    std::set<std::string> KeepSamples;
-    std::set<size_t> KeepIndex;
     /*************
-        VCF HEADER
+        VCF DATA
     *************/
     std::vector<std::string> CommentLines, HeaderColumns, HeaderSamples;
-    /*************
-        VCF LINE DATA
-    *************/
-    std::string CHR, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMATstr, lastFORMATstr;
-    std::vector<SAMPLEstruct> SAMPLES;
+    std::string lastFORMATstr;
     std::map<std::string,size_t> FORMATtagsMap;
-    std::vector<std::string> FORMATtags;
-    std::vector<std::pair<short,double>> Alleles;
+    std::vector<std::string> FORMATtagsVector;
+    /*************
+        TEMP SNP DATA
+    *************/
+    SnpDataStruct tmpSnpData;
     /*************
         STATUS
     *************/
-    size_t VerboseFreq;
-    size_t tmpCounter;
-    size_t OutputtedLines;
-    size_t ReadedLines;
-    size_t RemovedDueGCR;
-    size_t RemovedDueMAF;
-    std::vector<size_t> RemovedDueDPR, RemovedDueGQR;
+    size_t InputCounter = 0;
+    size_t OutputCounter = 0;
+    size_t RemovedGenotypeCallRate = 0;
+    size_t RemovedMultiallelic = 0;
+    size_t RemovedIndels = 0;
+    size_t RemovedMAF = 0;
+    size_t STATUS_FREQ = 10000;
+    std::vector<size_t> RemovedDepthRate;
+    std::vector<size_t> RemovedQualityRate;
     /*************
-        OTHER STATS
-    *************/
-    std::ofstream OtherStatsFile;
-    double GCR;
-    /*************
-        SAMPLE STATS
+        STATS
     *************/
     std::ofstream SampleStatsFile;
-    std::vector<STATSstruct> StatsVector;
-    int SampleStatsYLim;
+    std::vector<SampleStatsStruct> SampleStatsVector;
+    int SampleStatsYLim = 30;
 };
 #endif
