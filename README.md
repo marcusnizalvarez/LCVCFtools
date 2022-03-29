@@ -34,6 +34,14 @@ qmake && make
 ```
 ./LCVCFtools --gzvcf example.vcf.gz - --minGQ 20 --minDP 5 --minGCR 0.25 --minDPR 5 0.5 --MAF 0.1 --sample-stats | gzip -c > output.vcf.gz
 ```
+
+# Citation
+Cite as:
+Alvarez MVN. LCVCFtools v1.0.2‑alpha. 2022. https://doi.org/10.5281/zenodo.5259931.
+
+This software was originally developed for this paper: 
+Alvarez, MVN. et al. Nyssorhynchus darlingi genome-wide studies related to microgeographic dispersion and blood-seeking behavior. Parasites & Vectors. 2022. 15(1):106.
+ 
 # Credits
 Author: Marcus Vinicius Niz Alvarez  
 Email: marcus.alvarez@unesp.br  
