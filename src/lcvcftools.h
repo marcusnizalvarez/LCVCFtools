@@ -11,6 +11,7 @@
 #include <chrono>
 #include <ctime>
 #include <cmath>
+#include <numeric>
 /************************************************************
 Copyright Joe Coder 2004 - 2006.
 Distributed under the Boost Software License, Version 1.0.
@@ -21,7 +22,7 @@ https://www.boost.org/LICENSE_1_0.txt)
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
-#define THIS_VERSION "1.0.2"
+#define THIS_VERSION "1.0.4"
 class LCVCFtools
 {
 public:
@@ -30,9 +31,9 @@ public:
     void Run();
 private:
     struct SampleStatsStruct{
-        std::vector<unsigned> DP, GQ;
-        double GCR, NMR;
-        std::string Name;
+        std::vector<int> Depth, Quality;
+        double NonMissingRate, MeanDepth, MeanQuality;
+        std::string SampleId;
     };
     struct SampleDataStruct{
         std::vector<std::string> FORMAT;
@@ -53,18 +54,19 @@ private:
     void OutputLine();
     void ReadData();
     void ReadHeader();
+    void ReadKeepList(std::string Filename);
     void ReadRemoveList(std::string Filename);
     void OpenInputStream();
     void SetParameters(std::vector<std::string>& args);
     void ShowHelp();
-    void ShowStatus();
+    void ShowProgress();
     void OutputSampleStatistics();
     void Terminate(std::string Msg);
     bool CheckRate(const std::vector<int> &vec, int val, double qnt);
     bool Filter();
     bool GetLine(std::string& TmpString);
     bool StringToVcf(const std::string& tmpLineString);
-    int StrToData(const std::string& String);
+    int StringToInt(const std::string& String);
     std::string GetParametersString();
     std::string NowString();
     /*************
@@ -76,6 +78,7 @@ private:
         INPUT
     *************/
     std::ifstream file;
+    size_t filesize;
     boost::iostreams::filtering_istream in;
     std::string InputFilename;
     bool IsGzipped = false;
@@ -96,7 +99,7 @@ private:
     bool IsID = false;
     bool IsSampleStats = false;
     bool IsRemoveMultiallelic = true;
-    std::set<std::string> RemoveSamples;
+    std::set<std::string> RemoveSamples, KeepSamples;
     std::set<size_t> RemoveIndex;
     /*************
         VCF DATA
@@ -118,7 +121,7 @@ private:
     size_t RemovedMultiallelic = 0;
     size_t RemovedIndels = 0;
     size_t RemovedMAF = 0;
-    size_t STATUS_FREQ = 10000;
+    size_t Verbosity = 10000;
     std::vector<size_t> RemovedDepthRate;
     std::vector<size_t> RemovedQualityRate;
     /*************
@@ -126,6 +129,7 @@ private:
     *************/
     std::ofstream SampleStatsFile;
     std::vector<SampleStatsStruct> SampleStatsVector;
-    int SampleStatsYLim = 30;
+    int YLim = 100;
+    double YLimThreshold = 0.001;
 };
 #endif
