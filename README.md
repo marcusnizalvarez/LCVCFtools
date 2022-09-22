@@ -23,7 +23,8 @@ qmake && make
 * --minGQR <INT> <FLOAT>   Minimum GQ rate. Can be defined multiple times.
  
  ## Other arguments
-* --remove <STRING>        Remove samples from a list file (One sample name per line).
+* --remove <STRING>        Remove samples listed in a file.
+* --keep   <STRING>        Keep samples listed in a file, after --remove.
 * --sample-stats           Output sample statistics to 'stats.tsv'.
 * --keep-multiallelic      Don't skip multiallelic variants.
 * --ID                     Generate generic ID, useful for programs like Plink.
